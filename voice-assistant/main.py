@@ -239,7 +239,7 @@ async def handle_incoming_call(request: Request):
     response = VoiceResponse()
     response.say(
         "Saluton! Ni konektas vin kun virtuala asistanto kun voĉo kreita per "
-        "artefarita inteligenteco kaj funkciigata per Twilio kombine kun OpenAI.",
+        "artefarita intelekto kaj funkciigata per Twilio kombine kun OpenAI.",
         voice="Polly.Ewa",
     )
     response.pause(length=1)
