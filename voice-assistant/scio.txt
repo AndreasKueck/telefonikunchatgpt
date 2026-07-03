@@ -1,18 +1,13 @@
-# Aktualisiert am: 2026-07-03T15:19:02.485671
+# Aktualisiert am: 2026-07-03T15:30:15.059665
 
-NOVAĴOJ:
-- France records 2,025 excess deaths at peak of heatwave as Europe braces for more extreme weather: Forecasters are warning of further extreme temperatures on the continent in the next few days.
-- Ukrainian suspect hunted by police after Monaco bomb attack was 'disguised as a man': Officials believe the suspect may not have acted alone and spent days casing out scene of the attack.
-- German row over plan for workers to need sick note on first day of illness: A doctors' group says it "borders on madness" that patients will have to obtain the note in person.
-- Nasa launches mission to save falling space telescope: A Nasa-funded robot has blasted off to catch a falling telescope in mid-orbit and blast it back to safety before it burns up.
-- Iran begins public mourning for Ayatollah killed in February: Ali Khamenei's body will lie in state in Tehran's Grand Mosalla from Friday ahead of days-long funeral events.
-- US withdraws troops from Nigeria after Islamic State mission: The US said the joint operation, which began in December last year, was a success.
-- Stand-up comic held for jokes about Erdogan and Islam in Turkey crackdown: Deniz Göktaş is regarded as one of Turkey's most popular comedians and is accused of "inciting hatred and hostility" on stage.
-- 'Most massive' Russian attack on Kyiv kills at least 30: The latest barrage deployed the largest number of weapons on the capital and hit locations over a wide area.
-- Vatican excommunicates followers of global Catholic sect: Around 600,000 followers of the Society of Saint Pius X, a Catholic sect, are affected.
+TAGESSCHAU-HAUPTSCHLAGZEILE:
+- Nagelsmann tritt als Bundestrainer zurück - Klopp steht bereit
 
-VETERO EN EŬROPO:
-- Berlin: ☀️  +72°F
-- Paris: ☀️  +83°F
-- London: 🌤️  +76°F
-- Warsaw: 🌤️  +74°F
+ARD-TEXT-SCHLAGZEILEN:
+- WM: Nagelsmann tritt zurück
+- Merz verteidigt Attestpflicht
+- Zahl der Asylerstanträge sinkt
+
+SEEWETTERBERICHT (Shipping Forecast):
+- The general synopsis at 0600: High FitzRoy 1032 expected Sole with little change by 0600 tomorrow
+- German Bight Wind: Northwesterly 5 to 7, backing westerly or southwesterly 4 or 5, occasionally 6 later.

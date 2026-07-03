@@ -22,9 +22,9 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 import aiofiles
-import feedparser
 import requests
 import websockets
+from bs4 import BeautifulSoup
 from fastapi import FastAPI, WebSocket, Request
 from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.websockets import WebSocketDisconnect
@@ -51,16 +51,20 @@ VOICE = os.environ.get("REALTIME_VOICE", "marin")
 DATA_DIR = Path(__file__).parent
 SCIO_FILE = DATA_DIR / "scio.txt"
 
-# Oefentliaj RSS-fontoj kun mondaj novajhoj (anstatau la mortinta Gist-URL de la
-# originala skripto). Neniu API-shlosilo bezonata.
-NEWS_FEED_URLS = [
-    "http://feeds.bbci.co.uk/news/world/rss.xml",
-    "http://feeds.bbci.co.uk/news/world/europe/rss.xml",
-]
-NEWS_ITEMS_PER_FEED = 6
+HTTP_HEADERS = {"User-Agent": "Mozilla/5.0 (compatible; ReplitVoiceAssistant/1.0)"}
 
-# Vetero por kelkaj Europaj urboj, per la senpaga wttr.in-servo (neniu shlosilo bezonata).
-WEATHER_CITIES = ["Berlin", "Paris", "London", "Warsaw"]
+# Haupt-Schlagzeile der Tagesschau-Eilmeldungen-Seite.
+TAGESSCHAU_EILMELDUNG_URL = "https://www.tagesschau.de/thema/eilmeldung"
+
+# Schlagzeilen der ARD-Text-Startseite (Rubrik "Nachrichten tagesschau").
+ARD_TEXT_URL = "https://www.ard-text.de/mobil/100"
+ARD_TEXT_SECTION_TITLE = "Nachrichten tagesschau"
+
+# Seewetterbericht (Shipping Forecast) des britischen Met Office.
+SHIPPING_FORECAST_URL = (
+    "https://weather.metoffice.gov.uk/specialist-forecasts/coast-and-sea/shipping-forecast"
+)
+SHIPPING_FORECAST_AREA = "German Bight"
 
 SCIO_REFRESH_MINUTES = int(os.environ.get("SCIO_REFRESH_MINUTES", 30))
 
@@ -86,49 +90,111 @@ SCIO_LAST_UPDATED = None
 # scio.txt: Hintergrundwissen, das periodisch aktualisiert wird
 # ---------------------------------------------------------------------------
 
-def fetch_news_section() -> str:
-    """Holt aktuelle Weltnachrichten per RSS (BBC World/Europe), ohne Duplikate."""
-    seen_titles = set()
-    lines = []
-    headers = {"User-Agent": "Mozilla/5.0 (compatible; ReplitVoiceAssistant/1.0)"}
-    for url in NEWS_FEED_URLS:
-        try:
-            response = requests.get(url, headers=headers, timeout=10)
-            response.raise_for_status()
-            feed = feedparser.parse(response.content)
-            for entry in feed.entries[:NEWS_ITEMS_PER_FEED]:
-                title = entry.get("title", "").strip()
-                summary = entry.get("summary", "").strip()
-                if title and title not in seen_titles:
-                    seen_titles.add(title)
-                    lines.append(f"- {title}" + (f": {summary}" if summary else ""))
-        except Exception as e:
-            print(f"[scio] Fehler beim Abrufen des Feeds {url}: {e}")
-    if not lines:
+def fetch_tagesschau_headline() -> str:
+    """Holt die Haupt-Schlagzeile von der Tagesschau-Eilmeldungen-Seite."""
+    try:
+        response = requests.get(TAGESSCHAU_EILMELDUNG_URL, headers=HTTP_HEADERS, timeout=10)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.content, "lxml")
+        top_teaser = soup.select_one("div.teaser.teaser--top")
+        if not top_teaser:
+            return ""
+        headline_el = top_teaser.select_one(
+            ".teaser__headline, .teaser-xs__headline, .teaser__teaserheadline"
+        )
+        headline = (headline_el or top_teaser).get_text(" ", strip=True)
+        if not headline:
+            return ""
+        return "TAGESSCHAU-HAUPTSCHLAGZEILE:\n- " + headline
+    except Exception as e:
+        print(f"[scio] Fehler beim Abrufen der Tagesschau-Schlagzeile: {e}")
         return ""
-    return "NOVAĴOJ:\n" + "\n".join(lines)
 
 
-def fetch_weather_section() -> str:
-    """Holt aktuellen Wetterbericht fuer ein paar europaeische Staedte (wttr.in, kein API-Key noetig)."""
-    lines = []
-    for city in WEATHER_CITIES:
-        try:
-            response = requests.get(f"https://wttr.in/{city}", params={"format": "3"}, timeout=10)
-            response.raise_for_status()
-            text = response.text.strip()
-            if text:
-                lines.append(f"- {text}")
-        except Exception as e:
-            print(f"[scio] Fehler beim Abrufen des Wetters fuer {city}: {e}")
-    if not lines:
+def fetch_ardtext_headlines() -> str:
+    """Holt die Schlagzeilen der Rubrik 'Nachrichten tagesschau' von ARD-Text."""
+    try:
+        response = requests.get(ARD_TEXT_URL, headers=HTTP_HEADERS, timeout=10)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.content, "lxml")
+
+        target_table = None
+        for table in soup.select("table.broadcastTable"):
+            h3 = table.find("h3")
+            if h3 and h3.get_text(strip=True) == ARD_TEXT_SECTION_TITLE:
+                target_table = table
+                break
+        if not target_table:
+            return ""
+
+        lines = []
+        for row in target_table.select("tr"):
+            classes = row.get("class") or []
+            if "title" in classes or "visuallyhidden" in classes:
+                continue
+            cell = row.select_one("td.text") or row.find("td")
+            if cell:
+                text = cell.get_text(" ", strip=True)
+                if text:
+                    lines.append(f"- {text}")
+        if not lines:
+            return ""
+        return "ARD-TEXT-SCHLAGZEILEN:\n" + "\n".join(lines)
+    except Exception as e:
+        print(f"[scio] Fehler beim Abrufen der ARD-Text-Schlagzeilen: {e}")
         return ""
-    return "VETERO EN EŬROPO:\n" + "\n".join(lines)
+
+
+def fetch_shipping_forecast_section() -> str:
+    """Holt General Synopsis und die Windvorhersage fuer German Bight vom Met Office Shipping Forecast."""
+    try:
+        response = requests.get(SHIPPING_FORECAST_URL, headers=HTTP_HEADERS, timeout=10)
+        response.raise_for_status()
+        soup = BeautifulSoup(response.content, "lxml")
+
+        lines = []
+
+        synopsis_time_el = soup.select_one("h4.synopsis-time")
+        synopsis_text_el = soup.select_one("p.synopsis-text")
+        if synopsis_time_el and synopsis_text_el:
+            lines.append(
+                f"{synopsis_time_el.get_text(' ', strip=True)}: "
+                f"{synopsis_text_el.get_text(' ', strip=True)}"
+            )
+
+        area_section = soup.find(
+            "section", attrs={"data-value": SHIPPING_FORECAST_AREA}
+        ) or soup.select_one(f"#{SHIPPING_FORECAST_AREA.replace(' ', '-')}")
+        if area_section:
+            dl = area_section.select_one("dl")
+            if dl:
+                terms = dl.find_all("dt")
+                defs = dl.find_all("dd")
+                for term, definition in zip(terms, defs):
+                    if term.get_text(strip=True).lower() == "wind":
+                        lines.append(
+                            f"{SHIPPING_FORECAST_AREA} Wind: {definition.get_text(' ', strip=True)}"
+                        )
+
+        if not lines:
+            return ""
+        return "SEEWETTERBERICHT (Shipping Forecast):\n" + "\n".join(f"- {line}" for line in lines)
+    except Exception as e:
+        print(f"[scio] Fehler beim Abrufen des Seewetterberichts: {e}")
+        return ""
 
 
 def fetch_scio_data() -> str | None:
-    """Baut den Hintergrundwissen-Text aus Nachrichten- und Wetterdaten zusammen."""
-    sections = [s for s in (fetch_news_section(), fetch_weather_section()) if s]
+    """Baut den Hintergrundwissen-Text aus den drei konfigurierten Quellen zusammen."""
+    sections = [
+        s
+        for s in (
+            fetch_tagesschau_headline(),
+            fetch_ardtext_headlines(),
+            fetch_shipping_forecast_section(),
+        )
+        if s
+    ]
     if not sections:
         return None
     return "\n\n".join(sections)
