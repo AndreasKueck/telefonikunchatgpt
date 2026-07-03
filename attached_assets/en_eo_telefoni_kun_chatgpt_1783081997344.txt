@@ -1,0 +1,20 @@
+En Esperanto telefoni kun ChatGPT
+
+Se tion vi simple volas fari, eksciu la telefonnumeron tie.
+
+Por efektivigi la aferon por telefonnumero, kiun vi mem estas luinta de Twilio, procedu jene:
+Bezonataj estas:
+
+Twilio-konto inkluzive telefonnumeron
+OpenAI-konto inkluzive OpenAI-API-shlosilon por ghia aplikprograma interfaco (API)
+uzantokonto che pythonanywhere (minimuma tarifo: “Hacker”)
+ngrok-konto inkluzive de ngrok-shlosilo.
+Procedu jene:
+
+Pasho 1: En pythonanywhere malfermu konzolon kaj tie procedu lau tiu jutubajho.
+Pasho 2: Tie instalu ankau flask kaj pyngrok per respektive pip install flask kaj pip install pyngrok.
+Pasho 3: En Files (Dosieroj) de pythonanywhere, pli precize en dosierujo /home/uzantonomo/openai-twilio/speech-assistant-openai-realtime-api-python/, trovu programon main.py kaj anstatauigu ghian enhavon per la enhavo de la programo prezentita en tiu GitHub-gisto. Atentu, ke preskau en la fino de la programkodo vi anstatauigu ngrokshlosilo per via ngrok-shlosilo.
+Pasho 4: En Files (Dosieroj) de pythonanywhere, pli precize en dosierujo /home/uzantonomo/openai-twilio/speech-assistant-openai-realtime-api-python/, trovu dosieron .env.example, enigu tie vian OpenAI-API-shlosilon kaj konservu la tiel modifitan dosieron sub la nomo .env.
+Pasho 5: En Files (Dosieroj) de pythonanywhere, pli precize en /home/uzantonomo/openai-twilio/speech-assistant-openai-realtime-api-python/env/lib/python3.10/site-packages/twilio/rest, trovu dosieron __init__.py kaj en ghi, nome sub def __init__ ( , anstatauigu None post username= kaj post account_sid= en ambau okazoj per la TWILIO_ACCOUNT_SID de via Twilio-uzantokonto kaj krome anstatauigu None post password= per la TWILIO_AUTH_TOKEN de via Twilio-uzantokonto.
+Pasho 6: En Tasks (Taskoj), sub Always-on tasks, de pythonanywhere enigu la komandon /home/uzantonomo/openai-twilio/speech-assistant-openai-realtime-api-python/env/bin/python /home/uzantonomo/openai-twilio/speech-assistant-openai-realtime-api-python/main.py kaj startigu ghin.
+Se chio iras glate, telefonvoko al via Twilio-telefonnumero estigas fluan interparolon surbaze de ChatGPT.

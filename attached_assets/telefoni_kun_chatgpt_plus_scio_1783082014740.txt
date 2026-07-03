@@ -1,0 +1,349 @@
+# Tiu chi programo estas modifo de la Pitona programo "main.py" prezentita en https://www.youtube.com/watch?v=uFgWY-lmKRM
+# por uzado ene de pythonanywhere.com kaj tie havu la nomon "main.py".
+# Pli: https://medium.com/westphoenizier/en-esperanto-telefoni-kun-chatgpt-f97a6c3429dc
+
+# Tiu chi varianto provizas ChatGPT aldone per la enhavo de dosiero scio.txt. Dosiero scio.txt estas de temp' al tempo aktualigata per programo scio1.py.
+# Tial en telefonajho la vocha asistanto povas utiligi la enhavon de scio.txt okaze de demandoj pri aktualaj novajhoj kaj vetera situacio
+# super Europo.
+
+# Programo telefonikunchatgptplusscio.py estas kreita per helpo de DeepSeek surbaze de telefonikunchatgpt.py.
+
+import os
+import json
+import base64
+import asyncio
+import websockets
+from fastapi import FastAPI, WebSocket, Request
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.websockets import WebSocketDisconnect
+from twilio.twiml.voice_response import VoiceResponse, Connect, Say, Stream
+from twilio.rest import Client
+from dotenv import load_dotenv
+import aiofiles
+from datetime import datetime, timedelta
+
+twilio_client = Client()
+
+load_dotenv()
+
+# Configuration
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
+PORT = int(os.getenv('PORT', 5002))
+TEMPERATURE = float(os.getenv('TEMPERATURE', 0.8))
+SCIO_FILE = "/home/uzantonomo/openai-twilio/speech-assistant-openai-realtime-api-python/scio.txt"
+# Anstatauigu "uzantono" per via uzantonomo
+SCIO_CACHE = None
+SCIO_LAST_UPDATED = None
+
+VOICE = 'marin'
+LOG_EVENT_TYPES = [
+    'error', 'response.content.done', 'rate_limits.updated',
+    'response.done', 'input_audio_buffer.committed',
+    'input_audio_buffer.speech_stopped', 'input_audio_buffer.speech_started',
+    'session.created', 'session.updated'
+]
+SHOW_TIMING_MATH = False
+
+app = FastAPI()
+
+if not OPENAI_API_KEY:
+    raise ValueError('Missing the OpenAI API key. Please set it in the .env file.')
+
+async def get_scio_data():
+    """
+    Legas la aktualajn datumojn el scio.txt kaj enkashmemorigas ilin.
+    """
+    global SCIO_CACHE, SCIO_LAST_UPDATED
+
+    try:
+        # Kontrolu, chu la kashmemoro ankorau estas valida (maksimume 5 minutojn malnova)
+        if (SCIO_LAST_UPDATED and
+            datetime.now() - SCIO_LAST_UPDATED < timedelta(minutes=5)):
+            return SCIO_CACHE
+
+        async with aiofiles.open(SCIO_FILE, 'r', encoding='utf-8') as f:
+            content = await f.read()
+
+            if content.strip():
+                SCIO_CACHE = {
+                    "content": content,
+                    "last_updated": datetime.now().isoformat(),
+                    "size_chars": len(content),
+                    "size_lines": len(content.split('\n'))
+                }
+                SCIO_LAST_UPDATED = datetime.now()
+                return SCIO_CACHE
+            else:
+                print("scio.txt estas malplena")
+                return None
+
+    except FileNotFoundError:
+        print(f"Dosiero {SCIO_FILE} ne trovita")
+        return None
+    except Exception as e:
+        print(f"Eraro che legado je {SCIO_FILE}: {e}")
+        return None
+
+async def get_system_message():
+    """
+    Kreas la sistemmesaghon kun la aktualaj datumoj de scio.txt.
+    """
+    base_message = (
+        "Vi estas ghentila kaj helpopreta asistanto, kiu treege bone komprenas kaj parolas precipe Esperanton. "
+        "Vi havas aliron al aktualaj donita?oj el diversaj fontoj."
+    )
+
+    # Havigas al si la datumojn de scio.txt
+    scio_data = await get_scio_data()
+
+    if not scio_data:
+        return base_message
+
+    # Eventuale mallongigu
+    content = scio_data["content"]
+    if len(content) > 2500:
+        content = content[:2500] + "... [plia enhavo tran?ita]"
+
+    data_message = (
+        f"\n\n?? AKTUALAJ DONITAJOJ (?isdatigita: {scio_data['last_updated']}):\n"
+        f"{content}\n\n"
+        f"?? UTILAJ INSTRUKCIOJ:\n"
+        f"- Uzu la suprajn donita?ojn por respondi demandojn pri aktualaj eventoj, nova?oj kaj faktoj.\n"
+        f"- Se la demando rilatas al enhavo en la donita?oj, referencu ?in precize.\n"
+        f"- Se oni ne specife demandas pri aktualaj aferoj, ne menciu la donita?ojn senbezone.\n"
+        f"- ?iam estu ?entila, helpema kaj parolu klare en Esperanto.\n"
+        f"- Se vi ne certas pri io, diru tion honeste anstata? inventi informojn.\n"
+    )
+
+    return base_message + data_message
+
+@app.get("/", response_class=JSONResponse)
+async def index_page():
+    return {"message": "Twilio Media Stream Server rulas!"}
+
+@app.get("/scio-data")
+async def get_scio_data_endpoint():
+    """API-finpunkto, por kontroli la aktualajn datumojn de scio.txt"""
+    scio_data = await get_scio_data()
+    if scio_data:
+        return JSONResponse(scio_data)
+    else:
+        return JSONResponse({"error": "Datumoj de scio.txt ne haveblaj"}, status_code=404)
+
+@app.get("/health")
+async def health_check():
+    """Finpunkto de funkcikontrolo"""
+    scio_data = await get_scio_data()
+    return JSONResponse({
+        "status": "healthy" if scio_data else "degraded",
+        "scio_data_available": bool(scio_data),
+        "last_updated": scio_data.get('last_updated') if scio_data else None,
+        "content_size": scio_data.get('size_chars', 0) if scio_data else 0
+    })
+
+@app.api_route("/incoming-call", methods=["GET", "POST"])
+async def handle_incoming_call(request: Request):
+    """Handle incoming call and return TwiML response to connect to Media Stream."""
+    response = VoiceResponse()
+    # <Say> punctuation to improve text-to-speech flow
+    response.say(
+        "Saluton! Nij konektas wijn kun wijrtuala asistanto kun woczo kreijta per artefarijta ijntelekto kay funkcijijgata per Twijlijo kombijne kun Open A Ij.", voice="Polly.Ewa"
+    )
+    response.pause(length=1)
+    response.say(
+        "Bonwole komencu parolij.",
+        voice="Polly.Ewa"
+    )
+    host = request.url.hostname
+    connect = Connect()
+    connect.stream(url=f'wss://{host}/media-stream')
+    response.append(connect)
+    return HTMLResponse(content=str(response), media_type="application/xml")
+
+@app.websocket("/media-stream")
+async def handle_media_stream(websocket: WebSocket):
+    """Handle WebSocket connections between Twilio and OpenAI."""
+    print("Client connected")
+    await websocket.accept()
+
+    # Havigi al si la aktualigitan sistemmesaghon kun datumoj de scio.txt
+    current_system_message = await get_system_message()
+    print("Aktualigita sistemnesagho shargita")
+
+    async with websockets.connect(
+        f"wss://api.openai.com/v1/realtime?model=gpt-realtime&temperature={TEMPERATURE}&voice={VOICE}",
+        additional_headers={
+            "Authorization": f"Bearer {OPENAI_API_KEY}"
+        }
+    ) as openai_ws:
+        await initialize_session(openai_ws, current_system_message)
+
+        # Connection specific state
+        stream_sid = None
+        latest_media_timestamp = 0
+        last_assistant_item = None
+        mark_queue = []
+        response_start_timestamp_twilio = None
+
+        async def receive_from_twilio():
+            """Receive audio data from Twilio and send it to the OpenAI Realtime API."""
+            nonlocal stream_sid, latest_media_timestamp
+            try:
+                async for message in websocket.iter_text():
+                    data = json.loads(message)
+                    if data['event'] == 'media' and openai_ws.state.name == 'OPEN':
+                        latest_media_timestamp = int(data['media']['timestamp'])
+                        audio_append = {
+                            "type": "input_audio_buffer.append",
+                            "audio": data['media']['payload']
+                        }
+                        await openai_ws.send(json.dumps(audio_append))
+                    elif data['event'] == 'start':
+                        stream_sid = data['start']['streamSid']
+                        print(f"Incoming stream has started {stream_sid}")
+                        response_start_timestamp_twilio = None
+                        latest_media_timestamp = 0
+                        last_assistant_item = None
+                    elif data['event'] == 'mark':
+                        if mark_queue:
+                            mark_queue.pop(0)
+            except WebSocketDisconnect:
+                print("Client disconnected.")
+                if openai_ws.state.name == 'OPEN':
+                    await openai_ws.close()
+
+        async def send_to_twilio():
+            """Receive events from the OpenAI Realtime API, send audio back to Twilio."""
+            nonlocal stream_sid, last_assistant_item, response_start_timestamp_twilio
+            try:
+                async for openai_message in openai_ws:
+                    response = json.loads(openai_message)
+                    if response['type'] in LOG_EVENT_TYPES:
+                        print(f"Received event: {response['type']}", response)
+
+                    if response.get('type') == 'response.output_audio.delta' and 'delta' in response:
+                        audio_payload = base64.b64encode(base64.b64decode(response['delta'])).decode('utf-8')
+                        audio_delta = {
+                            "event": "media",
+                            "streamSid": stream_sid,
+                            "media": {
+                                "payload": audio_payload
+                            }
+                        }
+                        await websocket.send_json(audio_delta)
+
+
+                        if response.get("item_id") and response["item_id"] != last_assistant_item:
+                            response_start_timestamp_twilio = latest_media_timestamp
+                            last_assistant_item = response["item_id"]
+                            if SHOW_TIMING_MATH:
+                                print(f"Setting start timestamp for new response: {response_start_timestamp_twilio}ms")
+
+                        await send_mark(websocket, stream_sid)
+
+                    # Trigger an interruption. Your use case might work better using `input_audio_buffer.speech_stopped`, or combining the two.
+                    if response.get('type') == 'input_audio_buffer.speech_started':
+                        print("Speech started detected.")
+                        if last_assistant_item:
+                            print(f"Interrupting response with id: {last_assistant_item}")
+                            await handle_speech_started_event()
+            except Exception as e:
+                print(f"Error in send_to_twilio: {e}")
+
+        async def handle_speech_started_event():
+            """Handle interruption when the caller's speech starts."""
+            nonlocal response_start_timestamp_twilio, last_assistant_item
+            print("Handling speech started event.")
+            if mark_queue and response_start_timestamp_twilio is not None:
+                elapsed_time = latest_media_timestamp - response_start_timestamp_twilio
+                if SHOW_TIMING_MATH:
+                    print(f"Calculating elapsed time for truncation: {latest_media_timestamp} - {response_start_timestamp_twilio} = {elapsed_time}ms")
+
+                if last_assistant_item:
+                    if SHOW_TIMING_MATH:
+                        print(f"Truncating item with ID: {last_assistant_item}, Truncated at: {elapsed_time}ms")
+
+                    truncate_event = {
+                        "type": "conversation.item.truncate",
+                        "item_id": last_assistant_item,
+                        "content_index": 0,
+                        "audio_end_ms": elapsed_time
+                    }
+                    await openai_ws.send(json.dumps(truncate_event))
+
+                await websocket.send_json({
+                    "event": "clear",
+                    "streamSid": stream_sid
+                })
+
+                mark_queue.clear()
+                last_assistant_item = None
+                response_start_timestamp_twilio = None
+
+        async def send_mark(connection, stream_sid):
+            if stream_sid:
+                mark_event = {
+                    "event": "mark",
+                    "streamSid": stream_sid,
+                    "mark": {"name": "responsePart"}
+                }
+                await connection.send_json(mark_event)
+                mark_queue.append('responsePart')
+
+        await asyncio.gather(receive_from_twilio(), send_to_twilio())
+
+async def send_initial_conversation_item(openai_ws):
+    """Send initial conversation item if AI talks first."""
+    initial_conversation_item = {
+        "type": "conversation.item.create",
+        "item": {
+            "type": "message",
+            "role": "user",
+            "content": [
+                {
+                    "type": "input_text",
+                    "text": "Greet the user with 'Hello there! I am an AI voice assistant powered by Twilio and the OpenAI Realtime API. You can ask me for facts, jokes, or anything you can imagine. How can I help you?'"
+                }
+            ]
+        }
+    }
+    await openai_ws.send(json.dumps(initial_conversation_item))
+    await openai_ws.send(json.dumps({"type": "response.create"}))
+
+
+async def initialize_session(openai_ws, system_message):
+    """Control initial session with OpenAI."""
+    session_update = {
+        "type": "session.update",
+        "session": {
+            "type": "realtime",
+            "model": "gpt-realtime",
+            "output_modalities": ["audio"],
+            "audio": {
+                "input": {
+                    "format": {"type": "audio/pcmu"},
+                    "turn_detection": {"type": "server_vad"}
+                },
+                "output": {
+                    "format": {"type": "audio/pcmu"}
+                }
+            },
+            "instructions": system_message,
+        }
+    }
+    print('Sending session update with SCIO data')
+    print(f"System message length: {len(system_message)} characters")
+    await openai_ws.send(json.dumps(session_update))
+
+    # Uncomment the next line to have the AI speak first
+    # await send_initial_conversation_item(openai_ws)
+
+if __name__ == "__main__":
+    import uvicorn
+    from pyngrok import ngrok
+    ngrok.set_auth_token("ngrokshlosilo")
+    # Anstatauigu "ngrokshlosilo" per via ngrok-shlosilo.
+    public_url = ngrok.connect(PORT, bind_tls=True).public_url
+    number = twilio_client.incoming_phone_numbers.list()[0]
+    number.update(voice_url=public_url + '/incoming-call')
+    uvicorn.run(app, host="0.0.0.0", port=PORT)

@@ -1,0 +1,89 @@
+# Programo scio1.py estas kreita per helpo de DeepSeek kaj de temp' al tempo aktualigas dosieron scio.txt.
+
+import requests
+from datetime import datetime
+import os
+import random
+
+def fetch_scio_data():
+    """
+    Holt die Daten von der SCIO Webseite und gibt sie als Text zurück.
+    """
+    try:
+        hazarda_nombro_int = random.randint(100000, 999999)
+        hazarda_nombro = str(hazarda_nombro_int)
+        url = "https://gist.githubusercontent.com/AndreasKueck/c5de7577d99ca4e82788dcd860335441/raw/0670c3a4a0053c4009fc1864fdcf1301b5f4cd76/novajhojai.md" + "?=" + hazarda_nombro
+        
+        # Header hinzufügen, um wie ein normaler Browser auszusehen
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+        
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()  # Wirft Exception bei HTTP-Fehlern
+        
+        # Prüfe, ob die Antwort Text enthält
+        if response.text.strip():
+            return response.text
+        else:
+            print("Die Webseite hat keinen Inhalt zurückgegeben.")
+            return None
+            
+    except requests.exceptions.RequestException as e:
+        print(f"Fehler beim Abruf der Webseite: {e}")
+        return None
+    except Exception as e:
+        print(f"Unerwarteter Fehler: {e}")
+        return None
+
+def save_to_text_file(content, filename="/home/uzantonomo/openai-twilio/speech-assistant-openai-realtime-api-python/scio.txt"):
+    """
+    Anstatauigu "uzantonomo" per via uzantonomo
+    Speichert den Inhalt in einer Textdatei mit Zeitstempel.
+    """
+    try:
+        timestamp = datetime.now().isoformat()
+        
+        # Füge einen Zeitstempel am Anfang der Datei hinzu
+        formatted_content = f"# Aktualisiert am: {timestamp}\n\n{content}"
+        
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.write(formatted_content)
+        
+        print(f"Daten erfolgreich in {filename} gespeichert")
+        return True
+        
+    except Exception as e:
+        print(f"Fehler beim Speichern der Datei: {e}")
+        return False
+
+def main():
+    """
+    Hauptfunktion: Holt Daten von der Webseite und speichert sie.
+    """
+    print("Starte Abruf der SCIO-Daten...")
+    
+    # Daten von der Webseite holen
+    web_content = fetch_scio_data()
+    
+    if web_content:
+        # Daten speichern
+        success = save_to_text_file(web_content)
+        
+        if success:
+            print("? Daten erfolgreich aktualisiert!")
+            print(f"Größe des Inhalts: {len(web_content)} Zeichen")
+            
+            # Zeige die ersten 200 Zeichen zur Vorschau
+            preview = web_content[:200].replace('\n', ' ')
+            if len(web_content) > 200:
+                preview += "..."
+            print(f"Vorschau: {preview}")
+            
+        else:
+            print("? Fehler beim Speichern der Daten")
+    else:
+        print("? Konnte keine Daten von der Webseite abrufen")
+
+if __name__ == "__main__":
+    main()
