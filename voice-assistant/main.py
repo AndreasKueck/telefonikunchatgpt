@@ -17,12 +17,12 @@ PythonAnywhere-Version ("telefonikunchatgptplusscio.py"). Wichtigste Aenderungen
 import os
 import json
 import base64
-import random
 import asyncio
 from datetime import datetime, timedelta
 from pathlib import Path
 
 import aiofiles
+import feedparser
 import requests
 import websockets
 from fastapi import FastAPI, WebSocket, Request
@@ -50,10 +50,18 @@ VOICE = os.environ.get("REALTIME_VOICE", "marin")
 
 DATA_DIR = Path(__file__).parent
 SCIO_FILE = DATA_DIR / "scio.txt"
-SCIO_SOURCE_URL = os.environ.get(
-    "SCIO_SOURCE_URL",
-    "https://gist.githubusercontent.com/AndreasKueck/c5de7577d99ca4e82788dcd860335441/raw/0670c3a4a0053c4009fc1864fdcf1301b5f4cd76/novajhojai.md",
-)
+
+# Oefentliaj RSS-fontoj kun mondaj novajhoj (anstatau la mortinta Gist-URL de la
+# originala skripto). Neniu API-shlosilo bezonata.
+NEWS_FEED_URLS = [
+    "http://feeds.bbci.co.uk/news/world/rss.xml",
+    "http://feeds.bbci.co.uk/news/world/europe/rss.xml",
+]
+NEWS_ITEMS_PER_FEED = 6
+
+# Vetero por kelkaj Europaj urboj, per la senpaga wttr.in-servo (neniu shlosilo bezonata).
+WEATHER_CITIES = ["Berlin", "Paris", "London", "Warsaw"]
+
 SCIO_REFRESH_MINUTES = int(os.environ.get("SCIO_REFRESH_MINUTES", 30))
 
 LOG_EVENT_TYPES = [
@@ -78,20 +86,52 @@ SCIO_LAST_UPDATED = None
 # scio.txt: Hintergrundwissen, das periodisch aktualisiert wird
 # ---------------------------------------------------------------------------
 
+def fetch_news_section() -> str:
+    """Holt aktuelle Weltnachrichten per RSS (BBC World/Europe), ohne Duplikate."""
+    seen_titles = set()
+    lines = []
+    headers = {"User-Agent": "Mozilla/5.0 (compatible; ReplitVoiceAssistant/1.0)"}
+    for url in NEWS_FEED_URLS:
+        try:
+            response = requests.get(url, headers=headers, timeout=10)
+            response.raise_for_status()
+            feed = feedparser.parse(response.content)
+            for entry in feed.entries[:NEWS_ITEMS_PER_FEED]:
+                title = entry.get("title", "").strip()
+                summary = entry.get("summary", "").strip()
+                if title and title not in seen_titles:
+                    seen_titles.add(title)
+                    lines.append(f"- {title}" + (f": {summary}" if summary else ""))
+        except Exception as e:
+            print(f"[scio] Fehler beim Abrufen des Feeds {url}: {e}")
+    if not lines:
+        return ""
+    return "NOVAĴOJ:\n" + "\n".join(lines)
+
+
+def fetch_weather_section() -> str:
+    """Holt aktuellen Wetterbericht fuer ein paar europaeische Staedte (wttr.in, kein API-Key noetig)."""
+    lines = []
+    for city in WEATHER_CITIES:
+        try:
+            response = requests.get(f"https://wttr.in/{city}", params={"format": "3"}, timeout=10)
+            response.raise_for_status()
+            text = response.text.strip()
+            if text:
+                lines.append(f"- {text}")
+        except Exception as e:
+            print(f"[scio] Fehler beim Abrufen des Wetters fuer {city}: {e}")
+    if not lines:
+        return ""
+    return "VETERO EN EŬROPO:\n" + "\n".join(lines)
+
+
 def fetch_scio_data() -> str | None:
-    """Holt aktuelle Zusatzinformationen von einer externen Quelle."""
-    try:
-        cache_buster = str(random.randint(100000, 999999))
-        url = f"{SCIO_SOURCE_URL}?={cache_buster}"
-        headers = {"User-Agent": "Mozilla/5.0 (compatible; ReplitVoiceAssistant/1.0)"}
-        response = requests.get(url, headers=headers, timeout=10)
-        response.raise_for_status()
-        if response.text.strip():
-            return response.text
+    """Baut den Hintergrundwissen-Text aus Nachrichten- und Wetterdaten zusammen."""
+    sections = [s for s in (fetch_news_section(), fetch_weather_section()) if s]
+    if not sections:
         return None
-    except Exception as e:
-        print(f"[scio] Fehler beim Abrufen der Zusatzdaten: {e}")
-        return None
+    return "\n\n".join(sections)
 
 
 async def refresh_scio_file():
