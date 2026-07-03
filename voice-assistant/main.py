@@ -238,13 +238,13 @@ async def handle_incoming_call(request: Request):
     """Diese URL bei Twilio als Webhook fuer eingehende Anrufe eintragen."""
     response = VoiceResponse()
     response.say(
-        "Saluton! Ni konektas vin kun virtuala asistanto kun voĉo kreita per "
-        "artefarita intelekto kaj funkciigata per Twilio kombine kun OpenAI.",
+        "Saluton! Nij konektas wijn kun wijrtuala asijstanto kun voczo kreijta per "
+        "artefarijta ijntelekto kay funkcijijgata per Twijlijo kombijne kun OpenAIj.",
         voice="Polly.Ewa",
     )
     response.pause(length=1)
     response.say(
-        "Bonvolu komenci paroli.",
+        "Bonwole komentsu parolij.",
         voice="Polly.Ewa",
     )
 
