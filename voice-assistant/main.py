@@ -146,8 +146,8 @@ async def get_scio_data():
 async def get_system_message() -> str:
     """Baut die Systemnachricht fuer die KI, inkl. optionaler Zusatzdaten."""
     base_message = (
-        "Du bist ein freundlicher, hilfsbereiter Sprachassistent. "
-        "Antworte klar, natuerlich und in kurzen, gut sprechbaren Saetzen."
+        "Vi estas ĝentila kaj helpopreta asistanto, kiu treege bone komprenas kaj parolas "
+        "precipe Esperanton. Respondu klare, nature kaj per mallongaj, facile parolindaj frazoj."
     )
 
     scio_data = await get_scio_data()
@@ -156,13 +156,13 @@ async def get_system_message() -> str:
 
     content = scio_data["content"]
     if len(content) > 2500:
-        content = content[:2500] + "... [gekuerzt]"
+        content = content[:2500] + "... [plia enhavo tranĉita]"
 
     return base_message + (
-        f"\n\nAKTUELLE ZUSATZDATEN (Stand: {scio_data['last_updated']}):\n"
+        f"\n\nAKTUALAJ DONITAĴOJ (ĝisdatigita: {scio_data['last_updated']}):\n"
         f"{content}\n\n"
-        "Nutze diese Daten nur, wenn danach gefragt wird. Wenn du dir bei etwas "
-        "unsicher bist, sag das ehrlich, statt Informationen zu erfinden."
+        "Uzu la suprajn donitaĵojn nur kiam oni demandas pri aktualaj eventoj aŭ novaĵoj. "
+        "Se vi ne certas pri io, diru tion honeste anstataŭ inventi informojn."
     )
 
 
@@ -198,12 +198,15 @@ async def handle_incoming_call(request: Request):
     """Diese URL bei Twilio als Webhook fuer eingehende Anrufe eintragen."""
     response = VoiceResponse()
     response.say(
-        "Hallo! Sie sind mit einem KI-Sprachassistenten verbunden. "
-        "Sie koennen jetzt sprechen.",
-        voice="Polly.Vicki",
-        language="de-DE",
+        "Saluton! Ni konektas vin kun virtuala asistanto kun voĉo kreita per "
+        "artefarita inteligenteco kaj funkciigata per Twilio kombine kun OpenAI.",
+        voice="Polly.Ewa",
     )
     response.pause(length=1)
+    response.say(
+        "Bonvolu komenci paroli.",
+        voice="Polly.Ewa",
+    )
 
     host = request.url.hostname
     connect = Connect()
