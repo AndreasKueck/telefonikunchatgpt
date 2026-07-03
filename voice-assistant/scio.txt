@@ -1,4 +1,4 @@
-# Aktualisiert am: 2026-07-03T14:18:57.129720
+# Aktualisiert am: 2026-07-03T14:48:59.347547
 
 NOVAĴOJ:
 - France records 2,025 excess deaths at peak of heatwave as Europe braces for more extreme weather: Forecasters are warning of further extreme temperatures on the continent in the next few days.
@@ -14,6 +14,6 @@ NOVAĴOJ:
 
 VETERO EN EŬROPO:
 - Berlin: ☀️  +72°F
-- Paris: ☀️  +81°F
-- London: 🌤️  +72°F
-- Warsaw: ☀️  +74°F
+- Paris: ☀️  +83°F
+- London: 🌤️  +76°F
+- Warsaw: 🌤️  +74°F
