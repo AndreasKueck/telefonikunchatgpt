@@ -1,13 +1,13 @@
-# Aktualisiert am: 2026-07-03T19:38:59.952481
+# Aktualisiert am: 2026-07-04T10:00:26.520907
 
 TAGESSCHAU-HAUPTSCHLAGZEILE:
 - Nagelsmann tritt als Bundestrainer zurück - Klopp steht bereit
 
 ARD-TEXT-SCHLAGZEILEN:
-- WM: Nagelsmann tritt zurück
-- Merz verteidigt Attestpflicht
-- Zahl der Asylerstanträge sinkt
+- Proteste gegen AfD-Parteitag
+- Haushalt 2027 mit mehr Schulden
+- Feuer auf Stuttgarter Großmarkt
 
 SEEWETTERBERICHT (Shipping Forecast):
-- The general synopsis at midday: High FitzRoy 1033 expected Sole 1032 by midday tomorrow
-- German Bight Wind: Northwesterly 5 to 7, backing westerly or southwesterly 4 or 5, occasionally 6 later.
+- The general synopsis at midnight: High FitzRoy 1033 expected Sole 1031 by midnight tonight
+- German Bight Wind: Southwesterly veering northwesterly 3 to 5, occasionally 6 later.
