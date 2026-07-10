@@ -15,6 +15,7 @@ PythonAnywhere-Version ("telefonikunchatgptplusscio.py"). Wichtigste Aenderungen
 """
 
 import os
+import re
 import json
 import base64
 import asyncio
@@ -84,6 +85,52 @@ app = FastAPI()
 
 SCIO_CACHE = None
 SCIO_LAST_UPDATED = None
+
+
+# ---------------------------------------------------------------------------
+# Ziffern-Ersetzung fuer scio.txt
+# ---------------------------------------------------------------------------
+
+DIGIT_TO_ESPERANTO = {
+    "0": "nul",
+    "1": "unu",
+    "2": "du",
+    "3": "tri",
+    "4": "kvar",
+    "5": "kvin",
+    "6": "ses",
+    "7": "sep",
+    "8": "ok",
+    "9": "naŭ",
+}
+
+
+def replace_digits_with_esperanto_words(text: str) -> str:
+    """
+    Ersetzt alle Ziffern und Ziffernfolgen ziffernweise durch Esperanto-Wörter.
+
+    Beispiele:
+    0    -> nul
+    9    -> naŭ
+    1019 -> unu nul unu naŭ
+    """
+    def repl(match: re.Match) -> str:
+        digit_sequence = match.group(0)
+        words = " ".join(DIGIT_TO_ESPERANTO[digit] for digit in digit_sequence)
+
+        # Falls eine Zahl direkt an Buchstaben klebt, Leerzeichen ergänzen,
+        # damit z. B. "H2O" zu "H du O" wird statt "HduO".
+        prefix = ""
+        suffix = ""
+
+        if match.start() > 0 and text[match.start() - 1].isalpha():
+            prefix = " "
+        if match.end() < len(text) and text[match.end()].isalpha():
+            suffix = " "
+
+        return prefix + words + suffix
+
+    return re.sub(r"\d+", repl, text)
 
 
 # ---------------------------------------------------------------------------
@@ -202,13 +249,27 @@ def fetch_scio_data() -> str | None:
 
 async def refresh_scio_file():
     """Schreibt die aktuellen Zusatzdaten in scio.txt (mit Zeitstempel)."""
+    global SCIO_CACHE, SCIO_LAST_UPDATED
+
     content = fetch_scio_data()
     if content is None:
         return
+
     timestamp = datetime.now().isoformat()
     formatted = f"# Aktualisiert am: {timestamp}\n\n{content}"
+
+    # Alle Ziffern und Ziffernfolgen ziffernweise in Esperanto-Wörter umwandeln,
+    # bevor der Text in scio.txt geschrieben wird.
+    # Beispiel: 1019 -> unu nul unu naŭ
+    formatted = replace_digits_with_esperanto_words(formatted)
+
     async with aiofiles.open(SCIO_FILE, "w", encoding="utf-8") as f:
         await f.write(formatted)
+
+    # Cache leeren, damit beim naechsten Lesen sicher die aktualisierte Datei verwendet wird.
+    SCIO_CACHE = None
+    SCIO_LAST_UPDATED = None
+
     print(f"[scio] scio.txt aktualisiert ({len(content)} Zeichen)")
 
 
@@ -252,8 +313,7 @@ async def get_scio_data():
 async def get_system_message() -> str:
     """Baut die Systemnachricht fuer die KI, inkl. optionaler Zusatzdaten."""
     base_message = (
-        "Vi estas ĝentila kaj helpopreta asistanto, kiu treege bone komprenas kaj parolas "
-        "precipe Esperanton. Respondu klare, nature kaj per mallongaj, facile parolindaj frazoj."
+        "Bonvolu supozi, ke ĉiuj nombroj, ankaŭ tiuj de jaroj, de jena teksto estas skribitaj, kiel Esperanto-vortoj, kaj poste legi la tekston inkluzive de mallongigoj, kvazaŭ vi estus denaska parolanto de Esperanto. Atentu severe la oficialajn regulojn pri prononcado de Esperanto. Atentu, ke vi prononcu c ĉiam, kiel ts, ankaŭ antaŭ a, o, u kaj konsonanto. Atentu, ke vi prononcu ĵ kaj jh, kiel la kroata ž, ankaŭ antaŭ a, o, u kaj konsonanto. Atentu, ke vi prononcu ch kaj ĉ, kiel la kroata č, ankaŭ antaŭ a, o, u kaj konsonanto. Atentu, ke vi prononcu gh kaj ĝ, kiel la kroata dž, ankaŭ antaŭ a, o, u kaj konsonanto. Atentu, ke en la vortoj Nauro, Sauda, Seulo kaj Koreujo la u formas apartan silabon. Bonvolu preteratenti, ke vi ne estas speciale trejnita pri Esperanto. Bonvolu uzi Germana golfo anstatau German Bight."
     )
 
     scio_data = await get_scio_data()

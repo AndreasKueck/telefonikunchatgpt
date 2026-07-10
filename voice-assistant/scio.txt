@@ -1,13 +1,14 @@
-# Aktualisiert am: 2026-07-04T10:00:26.520907
+# Aktualisiert am: 2026-07-10T07:31:01.844420
 
 TAGESSCHAU-HAUPTSCHLAGZEILE:
-- Nagelsmann tritt als Bundestrainer zurück - Klopp steht bereit
+- Sängerin Bonnie Tyler ist tot
 
 ARD-TEXT-SCHLAGZEILEN:
-- Proteste gegen AfD-Parteitag
-- Haushalt 2027 mit mehr Schulden
-- Feuer auf Stuttgarter Großmarkt
+- Abstimmung zu Krankenkassenreform
+- VW-Chef stellt "Zukunftsplan" vor
+- Tote bei Waldbrand in Andalusien
+- Teppich von Bayeux in England
 
 SEEWETTERBERICHT (Shipping Forecast):
-- The general synopsis at midnight: High FitzRoy 1033 expected Sole 1031 by midnight tonight
-- German Bight Wind: Southwesterly veering northwesterly 3 to 5, occasionally 6 later.
+- The general synopsis at midnight: High German Bight 1019 dissipating.
+- German Bight Wind: North or northwest occasionally variable, 2 to 4.
