@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Voice Assistant Dashboard"
+description = "A publishable operations dashboard for monitoring the availability and status of the connected phone voice assistant."
+version = "1.0.0"
+id = "artifacts/voice-dashboard"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 21792
+
+[services.development]
+run = "pnpm --filter @workspace/voice-dashboard run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/voice-dashboard", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/voice-dashboard/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21792"
+BASE_PATH = "/"

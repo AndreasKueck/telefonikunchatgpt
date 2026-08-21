@@ -1,0 +1,147 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap');
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-card-border: hsl(var(--card-border));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --font-sans: var(--app-font-sans);
+  --font-mono: var(--app-font-mono);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --background: 39 33% 96%;
+  --foreground: 220 31% 17%;
+  --border: 39 19% 86%;
+  --input: 39 19% 86%;
+  --ring: 163 55% 39%;
+  --card: 40 38% 98%;
+  --card-foreground: 220 31% 17%;
+  --card-border: 39 22% 88%;
+  --primary: 163 55% 33%;
+  --primary-foreground: 40 38% 98%;
+  --secondary: 219 27% 91%;
+  --secondary-foreground: 220 31% 24%;
+  --muted: 38 24% 92%;
+  --muted-foreground: 219 14% 46%;
+  --accent: 19 62% 55%;
+  --accent-foreground: 40 38% 98%;
+  --destructive: 3 56% 47%;
+  --destructive-foreground: 40 38% 98%;
+  --sidebar: 220 31% 17%;
+  --sidebar-foreground: 40 38% 96%;
+  --sidebar-border: 220 23% 25%;
+  --sidebar-primary: 163 55% 49%;
+  --sidebar-primary-foreground: 220 31% 17%;
+  --sidebar-accent: 220 25% 23%;
+  --sidebar-accent-foreground: 40 38% 96%;
+  --chart-1: 163 55% 33%;
+  --chart-2: 19 62% 55%;
+  --chart-3: 219 40% 54%;
+  --chart-4: 42 72% 55%;
+  --chart-5: 3 56% 47%;
+  --app-font-sans: 'Manrope', sans-serif;
+  --app-font-mono: 'DM Mono', monospace;
+  --radius: 0.875rem;
+  --shadow-sm: 0 2px 8px hsl(220 31% 17% / 0.05);
+  --shadow-md: 0 16px 45px hsl(220 31% 17% / 0.08);
+  --shadow-lg: 0 24px 72px hsl(220 31% 17% / 0.12);
+  --tracking-normal: 0em;
+  --spacing: 0.25rem;
+}
+
+.dark {
+  --background: 220 31% 12%;
+  --foreground: 40 38% 96%;
+  --border: 220 22% 25%;
+  --input: 220 22% 25%;
+  --ring: 163 55% 49%;
+  --card: 220 27% 16%;
+  --card-foreground: 40 38% 96%;
+  --card-border: 220 22% 25%;
+  --primary: 163 55% 49%;
+  --primary-foreground: 220 31% 12%;
+  --secondary: 220 25% 23%;
+  --secondary-foreground: 40 38% 96%;
+  --muted: 220 24% 20%;
+  --muted-foreground: 219 14% 67%;
+  --accent: 19 62% 55%;
+  --accent-foreground: 40 38% 98%;
+  --destructive: 3 56% 57%;
+  --destructive-foreground: 40 38% 98%;
+}
+
+@layer base {
+  * { @apply border-border; }
+  html { background: hsl(var(--background)); }
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+    min-width: 320px;
+  }
+  button { font-family: inherit; }
+}
+
+@keyframes breathe {
+  0%, 100% { transform: scale(0.92); opacity: 0.44; }
+  50% { transform: scale(1.08); opacity: 0.14; }
+}
+
+@keyframes signal-rise {
+  0%, 100% { transform: scaleY(0.55); opacity: 0.62; }
+  50% { transform: scaleY(1); opacity: 1; }
+}
+
+@keyframes enter-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.page-enter { animation: enter-up 600ms cubic-bezier(.22, 1, .36, 1) both; }
+.page-enter-delay { animation: enter-up 600ms 120ms cubic-bezier(.22, 1, .36, 1) both; }
+.page-enter-delay-2 { animation: enter-up 600ms 220ms cubic-bezier(.22, 1, .36, 1) both; }
+.signal-breathe { animation: breathe 3.4s ease-in-out infinite; }
+.signal-bar { transform-origin: bottom; animation: signal-rise 1.6s ease-in-out infinite; }
+.signal-bar:nth-child(2n) { animation-delay: -0.7s; }
+.signal-bar:nth-child(3n) { animation-delay: -1.1s; }
+
+.grain::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: .035;
+  z-index: 20;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 180 180' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='.8'/%3E%3C/svg%3E");
+}
+
+.hairline-grid {
+  background-image: linear-gradient(hsl(220 31% 17% / .035) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(220 31% 17% / .035) 1px, transparent 1px);
+  background-size: 34px 34px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
+}
