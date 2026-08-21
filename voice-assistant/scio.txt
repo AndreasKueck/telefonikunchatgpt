@@ -1,13 +1,13 @@
-# Aktualisiert am: du nul du ses-nul ok-du nul T nul sep:nul ses:du sep.nul sep tri ses du kvin
+# Aktualisiert am: du nul du ses-nul ok-du unu T nul kvin:du unu:kvar ok.kvin kvin du sep ok kvar
 
 TAGESSCHAU-HAUPTSCHLAGZEILE:
 - Hindernisläufer Ruppert gewinnt Gold, Bebendorf Bronze
 
 ARD-TEXT-SCHLAGZEILEN:
-- Russland greift Kiew massiv an
-- Neue Drohung Trumps gegen Iran
-- Unwetterschäden in Deutschland
+- Europäer kritisieren Israel
+- Abstimmung zu Guterres-Nachfolge
+- Erdbeben in Andenregion in Peru
 
 SEEWETTERBERICHT (Shipping Forecast):
-- The general synopsis at midnight: Low Irish Sea unu nul nul unu losing its identity
-- German Bight Wind: Variable du to kvar, becoming cyclonic, then northwest later, tri to kvin.
+- The general synopsis at midnight: High moving slowly east expected tri kvin nul miles west of Shannon unu nul tri nul by midnight tonight. Low moving steadily east expected unu kvin nul miles west of FitzRoy naŭ naŭ ses by same time
+- German Bight Wind: Northwest tri to kvin, increasing kvin or ses later.
