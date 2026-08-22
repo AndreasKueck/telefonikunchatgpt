@@ -1,13 +1,14 @@
-# Aktualisiert am: du nul du ses-nul ok-du unu T nul kvin:du unu:kvar ok.kvin kvin du sep ok kvar
+# Aktualisiert am: du nul du ses-nul ok-du du T nul ok:unu unu:kvar unu.kvar ok ses kvar kvin sep
 
 TAGESSCHAU-HAUPTSCHLAGZEILE:
 - Hindernisläufer Ruppert gewinnt Gold, Bebendorf Bronze
 
 ARD-TEXT-SCHLAGZEILEN:
-- Europäer kritisieren Israel
-- Abstimmung zu Guterres-Nachfolge
-- Erdbeben in Andenregion in Peru
+- Wadephul zu Gesprächen in Kiew
+- TikTok stimmt Vergleich zu
+- CDU-Landesparteitag in Thüringen
+- Rhein-Fähren können wieder fahren
 
 SEEWETTERBERICHT (Shipping Forecast):
-- The general synopsis at midnight: High moving slowly east expected tri kvin nul miles west of Shannon unu nul tri nul by midnight tonight. Low moving steadily east expected unu kvin nul miles west of FitzRoy naŭ naŭ ses by same time
-- German Bight Wind: Northwest tri to kvin, increasing kvin or ses later.
+- The general synopsis at midnight: Low du nul nul miles west of FitzRoy naŭ naŭ kvar expected just west of Trafalgar unu nul nul sep by unu ok nul nul Saturday. High du kvin nul miles west of Shannon unu nul tri nul expected Shannon, with little change by same time
+- German Bight Wind: Northwesterly kvin or ses, occasionally sep in northwest.
